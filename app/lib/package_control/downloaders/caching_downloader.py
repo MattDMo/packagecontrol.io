@@ -1,9 +1,15 @@
-import sys
 import re
 import json
 import hashlib
 
 from ..console_write import console_write
+
+try:
+    # Python 2
+    str_cls = unicode
+except (NameError):
+    # Python 3
+    str_cls = str
 
 
 class CachingDownloader(object):
@@ -24,19 +30,18 @@ class CachingDownloader(object):
         :return:
             The request headers dict, possibly with new headers added
         """
-
-        if not self.settings.get('cache'):
+        cache = self.settings.get('cache')
+        if not cache:
             return headers
 
         info_key = self.generate_key(url, '.info')
-        info_json = self.settings['cache'].get(info_key)
-
+        info_json = cache.get(info_key)
         if not info_json:
             return headers
 
         # Make sure we have the cached content to use if we get a 304
         key = self.generate_key(url)
-        if not self.settings['cache'].has(key):
+        if not cache.has(key):
             return headers
 
         try:
@@ -102,7 +107,7 @@ class CachingDownloader(object):
         status = int(status)
 
         # Don't do anything unless it was successful or not modified
-        if status not in [200, 304]:
+        if status not in (200, 304):
             if debug:
                 console_write(
                     u'''
@@ -134,13 +139,13 @@ class CachingDownloader(object):
         # Respect some basic cache control headers
         cache_control = headers.get('cache-control', '')
         if cache_control:
-            fields = re.split(',\s*', cache_control)
+            fields = re.split(r'\s*,\s*', cache_control)
             for field in fields:
                 if field == 'no-store':
                     return content
 
         # Don't ever cache zip/binary files for the sake of hard drive space
-        if headers.get('content-type') in ['application/zip', 'application/octet-stream']:
+        if headers.get('content-type') in ('application/zip', 'application/octet-stream'):
             if debug:
                 console_write(
                     u'''
@@ -186,7 +191,7 @@ class CachingDownloader(object):
             A string key for the URL
         """
 
-        if sys.version_info >= (3,) or isinstance(url, unicode):
+        if isinstance(url, str_cls):
             url = url.encode('utf-8')
 
         key = hashlib.md5(url).hexdigest()
@@ -203,13 +208,22 @@ class CachingDownloader(object):
             The cached content
         """
 
-        key = self.generate_key(url)
-        cache = self.settings['cache']
+        debug = self.settings.get('debug')
+        cache = self.settings.get('cache')
 
-        if not cache.has(key):
+        if not cache:
+            if debug:
+                console_write(
+                    u'''
+                    Skipping cache since there is no cache object
+                    '''
+                )
             return False
 
-        if self.settings.get('debug'):
+        key = self.generate_key(url)
+
+        cached_content = cache.get(key)
+        if cached_content and debug:
             console_write(
                 u'''
                 Using cached content for %s from %s
@@ -217,4 +231,4 @@ class CachingDownloader(object):
                 (url, cache.path(key))
             )
 
-        return cache.get(key)
+        return cached_content

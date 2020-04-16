@@ -12,6 +12,7 @@ from .dependencies import dependencies_controller
 from .developers import developers_controller
 from .docs import docs_controller
 from .events import events_controller
+from .fetch import fetch_controller
 from .five_hundred import five_hundred_controller
 from .four_oh_four import four_oh_four_controller
 from .index import index_controller
@@ -36,6 +37,8 @@ from .styles import styles_controller
 from .submit import submit_controller
 from .submitting_a_package import submitting_a_package_controller
 from .syncing import syncing_controller
+from .test_pr import test_pr_controller
+from .test_repo import test_repo_controller
 from .trending import trending_controller
 from .troubleshooting import troubleshooting_controller
 from .updated import updated_controller

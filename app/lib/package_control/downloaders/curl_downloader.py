@@ -79,10 +79,16 @@ class CurlDownloader(CliDownloader, DecodingDownloader, LimitingDownloader, Cach
                 return cached
 
         self.tmp_file = tempfile.NamedTemporaryFile().name
-        command = [self.curl, '--connect-timeout', str_cls(int(timeout)), '-sSL',
+        command = [
+            self.curl,
+            '--connect-timeout',
+            str_cls(int(timeout)),
+            '-sSL',
             '--tlsv1',
             # We have to capture the headers to check for rate limit info
-            '--dump-header', self.tmp_file]
+            '--dump-header',
+            self.tmp_file
+        ]
 
         user_agent = self.settings.get('user_agent')
         if user_agent:
@@ -152,13 +158,17 @@ class CurlDownloader(CliDownloader, DecodingDownloader, LimitingDownloader, Cach
                 headers = {}
                 for header in headers_str.splitlines():
                     if header[0:5] == 'HTTP/':
-                        message = re.sub('^HTTP/\d\.\d\s+\d+\s*', '', header)
-                        status = int(re.sub('^HTTP/\d\.\d\s+(\d+)(\s+.*)?$', '\\1', header))
+                        message = re.sub('^HTTP/\d(?:\.\d)?\s+\d+\s*', '', header)
+                        status = int(re.sub('^HTTP/\d(?:\.\d)?\s+(\d+)(\s+.*)?$', '\\1', header))
                         continue
                     if header.strip() == '':
                         continue
                     name, value = header.split(':', 1)
-                    headers[name.lower()] = value.strip()
+                    name = name.lower()
+                    if name in headers:
+                        headers[name] += ', %s' % value.strip()
+                    else:
+                        headers[name] = value.strip()
 
                 error, debug_sections = self.split_debug(self.stderr.decode('utf-8'))
                 if debug:
@@ -214,7 +224,11 @@ class CurlDownloader(CliDownloader, DecodingDownloader, LimitingDownloader, Cach
                     # network configuration where curl will try ipv6 and resolve
                     # it, but their ISP won't actually route it.
                     full_debug = u"\n".join([section['contents'] for section in debug_sections])
-                    ipv6_error = re.search('^\s*connect to ([0-9a-f]+(:+[0-9a-f]+)+) port \d+ failed: Network is unreachable', full_debug, re.I | re.M)
+                    ipv6_error = re.search(
+                        '^\s*connect to ([0-9a-f]+(:+[0-9a-f]+)+) port \d+ failed: Network is unreachable',
+                        full_debug,
+                        re.I | re.M
+                    )
                     if ipv6_error and tries != 0:
                         if debug:
                             console_write(
@@ -272,6 +286,16 @@ class CurlDownloader(CliDownloader, DecodingDownloader, LimitingDownloader, Cach
 
         :return:
             If the object supports HTTPS requests
+        """
+
+        return True
+
+    def supports_plaintext(self):
+        """
+        Indicates if the object can handle non-secure HTTP requests
+
+        :return:
+            If the object supports non-secure HTTP requests
         """
 
         return True

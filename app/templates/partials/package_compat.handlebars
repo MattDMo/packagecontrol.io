@@ -1,14 +1,17 @@
 {{#omits platforms "osx" "linux" "windows"}}
     {{!-- There are no releases, most likely due to a crawling issue --}}
 {{else}}
-    {{#omits st_versions 2}}<span class="versions only" title="Only works with Sublime Text 3">ST3</span>{{/omits}}
-    {{#omits st_versions 3}}<span class="versions only" title="Only works with Sublime Text 2">ST2</span>{{/omits}}
+    {{#eq st_versions 4}}<span class="versions only" title="Only works with Sublime Text 4">ST4</span>{{/eq}}
+    {{#eq st_versions 3}}<span class="versions only" title="Only works with Sublime Text 3">ST3</span>{{/eq}}
+    {{#eq st_versions 2}}<span class="versions only" title="Only works with Sublime Text 2">ST2</span>{{/eq}}
+    {{#eq st_versions 3 4}}<span class="versions only" title="Works with Sublime Text 3+">ST3</span>{{/eq}}
+    {{#eq st_versions 2 3}}<span class="versions only" title="Works with Sublime Text 2 and 3">ST2/ST3</span>{{/eq}}
 
     {{#omits platforms "osx" "linux"}}<span class="platforms windows" title="Only available on Windows">Win</span>{{/omits}}
-    {{#omits platforms "windows" "linux"}}<span class="platforms osx" title="Only available on OS X">OS X</span>{{/omits}}
+    {{#omits platforms "windows" "linux"}}<span class="platforms osx" title="Only available on Mac">Mac</span>{{/omits}}
     {{#omits platforms "osx" "windows"}}<span class="platforms linux" title="Only available on Linux">Linux</span>{{/omits}}
 
-    {{#eq platforms "osx" "linux"}}<span class="platforms osx also-before" title="Only available on OS X and Linux">OS X</span><span class="platforms linux also-after" title="Only available on OS X and Linux">Linux</span>{{/eq}}
+    {{#eq platforms "osx" "linux"}}<span class="platforms osx also-before" title="Only available on Mac and Linux">Mac</span><span class="platforms linux also-after" title="Only available on Mac and Linux">Linux</span>{{/eq}}
     {{#eq platforms "windows" "linux"}}<span class="platforms windows also-before" title="Only available on Windows and Linux">Win</span><span class="platforms linux also-after" title="Only available on Windows and Linux">Linux</span>{{/eq}}
-    {{#eq platforms "windows" "osx"}}<span class="platforms windows also-before" title="Only available on Windows and OS X">Win</span><span class="platforms osx also-after" title="Only available on Windows and OS X">OS X</span>{{/eq}}
+    {{#eq platforms "windows" "osx"}}<span class="platforms windows also-before" title="Only available on Windows and Mac">Win</span><span class="platforms osx also-after" title="Only available on Windows and Mac">Mac</span>{{/eq}}
 {{/omits}}

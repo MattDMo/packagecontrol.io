@@ -18315,7 +18315,7 @@ Backbone.addBeforePopState = function(BB) {
 }).call(this);
 
 (function() {
-  window.App.version = '1.3.0';
+  window.App.version = '1.5.0';
 
 }).call(this);
 
@@ -18346,6 +18346,7 @@ Backbone.addBeforePopState = function(BB) {
       this.creatingPackageFiles = __bind(this.creatingPackageFiles, this);
       this.code = __bind(this.code, this);
       this.channelsAndRepositories = __bind(this.channelsAndRepositories, this);
+      this.testRepo = __bind(this.testRepo, this);
       this.sayThanks = __bind(this.sayThanks, this);
       this.about = __bind(this.about, this);
       this.stats = __bind(this.stats, this);
@@ -18492,6 +18493,14 @@ Backbone.addBeforePopState = function(BB) {
       return this.ensureData('html', (function(_this) {
         return function(data) {
           return App.layout.render('say_thanks', data);
+        };
+      })(this));
+    };
+
+    Router.prototype.testRepo = function() {
+      return this.ensureData((function(_this) {
+        return function(data) {
+          return App.layout.render('test_repo', data);
         };
       })(this));
     };
@@ -18709,7 +18718,6 @@ Backbone.addBeforePopState = function(BB) {
     __extends(Header, _super);
 
     function Header() {
-      this.refreshAd = __bind(this.refreshAd, this);
       this.animateLoadingBar = __bind(this.animateLoadingBar, this);
       this.highlightNav = __bind(this.highlightNav, this);
       this.setupShortcuts = __bind(this.setupShortcuts, this);
@@ -18729,22 +18737,6 @@ Backbone.addBeforePopState = function(BB) {
       'focus #search': 'enableShortcuts',
       'blur #search': 'disableShortcuts'
     };
-
-    Header.prototype.affiliates = [
-      {
-        href: 'https://sublimetextbook.com/friend/wbond',
-        src: '/img/book.png'
-      }, {
-        href: 'https://sublimetextbook.com/friend/wbond?utm_source=ad3&utm_medium=banner&utm_campaign=wbond',
-        src: '/img/book3.png'
-      }, {
-        href: 'https://sublimetextbook.com/friend/wbond?utm_source=ad4&utm_medium=banner&utm_campaign=wbond',
-        src: '/img/book4.png'
-      }, {
-        href: 'https://sublimetextbook.com/friend/wbond?utm_source=ad5&utm_medium=banner&utm_campaign=wbond',
-        src: '/img/book5.png'
-      }
-    ];
 
     Header.prototype.prevTerms = '';
 
@@ -18781,9 +18773,8 @@ Backbone.addBeforePopState = function(BB) {
       $(window).on('pushstate', this.resetSearch);
       if (window.navigator.platform.indexOf('Mac') !== -1) {
         keys = this.$('span.keys');
-        keys.text(keys.text().replace('ctrl', 'cmd'));
+        return keys.text(keys.text().replace('ctrl', 'cmd'));
       }
-      return this.refreshAd();
     };
 
     Header.prototype.cleanup = function() {
@@ -19000,34 +18991,6 @@ Backbone.addBeforePopState = function(BB) {
         this.$loading.data('css-transition', true);
       }
       return this.$loading.css(dimension, percentage + '%');
-    };
-
-    Header.prototype.refreshAd = function(showing) {
-      var existingLink, href, link, newLink, next, sponseredBy, src;
-      sponseredBy = $('#spons');
-      existingLink = sponseredBy.find('a.book');
-      next = Math.floor(Math.random() * this.affiliates.length);
-      href = this.affiliates[next].href;
-      src = this.affiliates[next].src;
-      if (existingLink.length > 0) {
-        newLink = $('<a href="' + href + '" class="book incoming"><img src="' + src + '"></a>');
-        newLink.css({
-          display: 'none'
-        });
-        sponseredBy.append(newLink);
-        newLink.fadeIn(250);
-        return setTimeout(function() {
-          existingLink.remove();
-          return newLink.removeClass('incoming');
-        }, 300);
-      } else {
-        link = $('<a href="' + href + '" class="book"><img src="' + src + '"></a>');
-        link.css({
-          display: 'none'
-        });
-        sponseredBy.append(link);
-        return link.fadeIn(150);
-      }
     };
 
     return Header;
@@ -19945,7 +19908,7 @@ Backbone.addBeforePopState = function(BB) {
       var ws, _socketConfig;
       _socketConfig = this.socketConfig;
       _socketConfig.generation += 1;
-      ws = new WebSocket('wss://packagecontrol.io/realtime');
+      ws = new WebSocket('wss://' + window.location.hostname + '/realtime');
       ws.onopen = _socketConfig.onopen;
       ws.onerror = _socketConfig.onerror;
       ws.onmessage = _socketConfig.onmessage;
@@ -20921,6 +20884,84 @@ Backbone.addBeforePopState = function(BB) {
 }).call(this);
 
 (function() {
+  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  App.Views.TestRepo = (function(_super) {
+    __extends(TestRepo, _super);
+
+    function TestRepo() {
+      this.doRerender = __bind(this.doRerender, this);
+      this.testJson = __bind(this.testJson, this);
+      return TestRepo.__super__.constructor.apply(this, arguments);
+    }
+
+    TestRepo.prototype.name = 'TestRepo';
+
+    TestRepo.prototype.events = {
+      'click button': 'testJson'
+    };
+
+    TestRepo.prototype.testJson = function(e) {
+      var er, json, repo_info;
+      e.preventDefault();
+      er = $('div.error');
+      if (er.length > 0) {
+        er.remove();
+      }
+      json = $('textarea#repo_json').val();
+      try {
+        repo_info = $.parseJSON(json);
+        this.doRerender({
+          json_string: json,
+          running: true
+        });
+        return $.ajax({
+          url: '/test_repo.json',
+          method: 'POST',
+          contentType: 'application/json',
+          data: json,
+          dataType: 'json',
+          success: (function(_this) {
+            return function(data, status, xhr) {
+              data.details.num_errors = data.details.errors.length;
+              data.details.num_warnings = data.details.warnings.length;
+              return _this.doRerender({
+                result: data,
+                json_string: json
+              });
+            };
+          })(this),
+          error: (function(_this) {
+            return function(xhr, status, error) {
+              return _this.doRerender({
+                error: error,
+                json_string: json
+              });
+            };
+          })(this)
+        });
+      } catch (_error) {
+        e = _error;
+        return this.doRerender({
+          error: e.message,
+          json_string: json
+        });
+      }
+    };
+
+    TestRepo.prototype.doRerender = function(data) {
+      return this.$el.empty().append(Handlebars.templates['test_repo'](data));
+    };
+
+    return TestRepo;
+
+  })(Snakeskin.View);
+
+}).call(this);
+
+(function() {
   var __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -21349,7 +21390,7 @@ Backbone.addBeforePopState = function(BB) {
   var template  = Handlebars.template,
       templates = Handlebars.templates = Handlebars.templates || {};
   templates['package'] = template({"1":function(depth0,helpers,partials,data) {
-  return "<span class=\"versions both\" title=\"Works with Sublime Text 2 and 3\">ST2/ST3</span>";
+  return "<span class=\"versions all\" title=\"Works with all versions of Sublime Text\">ALL</span>";
   },"3":function(depth0,helpers,partials,data) {
   var stack1, buffer = " <div class=\"labels\"> <span class=\"title\">Labels</span> ";
   stack1 = helpers.each.call(depth0, (depth0 != null ? depth0.labels : depth0), {"name":"each","hash":{},"fn":this.program(4, data),"inverse":this.noop,"data":data});
@@ -21380,12 +21421,12 @@ Backbone.addBeforePopState = function(BB) {
   stack1 = helpers['if'].call(depth0, (depth0 != null ? depth0.prerelease_version : depth0), {"name":"if","hash":{},"fn":this.program(11, data, depths),"inverse":this.noop,"data":data});
   if (stack1 != null) { buffer += stack1; }
   buffer += " ";
-  stack1 = helpers['if'].call(depth0, (depth0 != null ? depth0.version : depth0), {"name":"if","hash":{},"fn":this.program(17, data, depths),"inverse":this.noop,"data":data});
+  stack1 = helpers['if'].call(depth0, (depth0 != null ? depth0.version : depth0), {"name":"if","hash":{},"fn":this.program(22, data, depths),"inverse":this.noop,"data":data});
   if (stack1 != null) { buffer += stack1; }
   return buffer + " ";
 },"11":function(depth0,helpers,partials,data,depths) {
   var stack1, helper, helperMissing=helpers.helperMissing, functionType="function", escapeExpression=this.escapeExpression, buffer = " <div>  ";
-  stack1 = ((helpers.eq || (depth0 && depth0.eq) || helperMissing).call(depth0, (depths[2] != null ? depths[2].st_versions : depths[2]), 2, 3, {"name":"eq","hash":{},"fn":this.program(12, data, depths),"inverse":this.noop,"data":data}));
+  stack1 = ((helpers.ne || (depth0 && depth0.ne) || helperMissing).call(depth0, (depths[2] != null ? depths[2].st_versions : depths[2]), (depth0 != null ? depth0.st_versions : depth0), {"name":"ne","hash":{},"fn":this.program(12, data, depths),"inverse":this.noop,"data":data}));
   if (stack1 != null) { buffer += stack1; }
   buffer += " ";
   stack1 = this.invokePartial(partials.version_qualifiers, '', 'version_qualifiers', depth0, undefined, helpers, partials, data);
@@ -21395,19 +21436,31 @@ Backbone.addBeforePopState = function(BB) {
     + " </div> ";
 },"12":function(depth0,helpers,partials,data) {
   var stack1, helperMissing=helpers.helperMissing, buffer = " ";
-  stack1 = ((helpers.omits || (depth0 && depth0.omits) || helperMissing).call(depth0, (depth0 != null ? depth0.st_versions : depth0), 2, {"name":"omits","hash":{},"fn":this.program(13, data),"inverse":this.noop,"data":data}));
-  if (stack1 != null) { buffer += stack1; }
-  buffer += " ";
-  stack1 = ((helpers.omits || (depth0 && depth0.omits) || helperMissing).call(depth0, (depth0 != null ? depth0.st_versions : depth0), 3, {"name":"omits","hash":{},"fn":this.program(15, data),"inverse":this.noop,"data":data}));
+  stack1 = ((helpers.eq || (depth0 && depth0.eq) || helperMissing).call(depth0, (depth0 != null ? depth0.st_versions : depth0), 3, 4, {"name":"eq","hash":{},"fn":this.program(13, data),"inverse":this.program(15, data),"data":data}));
   if (stack1 != null) { buffer += stack1; }
   return buffer + " ";
 },"13":function(depth0,helpers,partials,data) {
-  return "<span class=\"versions only\" title=\"Sublime Text 3\">3</span>";
+  return " <span class=\"versions only\" title=\"Sublime Text 3\">3</span> ";
   },"15":function(depth0,helpers,partials,data) {
+  var stack1, helperMissing=helpers.helperMissing, buffer = " ";
+  stack1 = ((helpers.contains || (depth0 && depth0.contains) || helperMissing).call(depth0, (depth0 != null ? depth0.st_versions : depth0), 4, {"name":"contains","hash":{},"fn":this.program(16, data),"inverse":this.noop,"data":data}));
+  if (stack1 != null) { buffer += stack1; }
+  buffer += " ";
+  stack1 = ((helpers.contains || (depth0 && depth0.contains) || helperMissing).call(depth0, (depth0 != null ? depth0.st_versions : depth0), 3, {"name":"contains","hash":{},"fn":this.program(18, data),"inverse":this.noop,"data":data}));
+  if (stack1 != null) { buffer += stack1; }
+  buffer += " ";
+  stack1 = ((helpers.contains || (depth0 && depth0.contains) || helperMissing).call(depth0, (depth0 != null ? depth0.st_versions : depth0), 2, {"name":"contains","hash":{},"fn":this.program(20, data),"inverse":this.noop,"data":data}));
+  if (stack1 != null) { buffer += stack1; }
+  return buffer + " ";
+},"16":function(depth0,helpers,partials,data) {
+  return "<span class=\"versions only\" title=\"Sublime Text 4\">4</span>";
+  },"18":function(depth0,helpers,partials,data) {
+  return "<span class=\"versions only\" title=\"Sublime Text 3\">3</span>";
+  },"20":function(depth0,helpers,partials,data) {
   return "<span class=\"versions only\" title=\"Sublime Text 2\">2</span>";
-  },"17":function(depth0,helpers,partials,data,depths) {
+  },"22":function(depth0,helpers,partials,data,depths) {
   var stack1, helper, helperMissing=helpers.helperMissing, functionType="function", escapeExpression=this.escapeExpression, buffer = " <div>  ";
-  stack1 = ((helpers.eq || (depth0 && depth0.eq) || helperMissing).call(depth0, (depths[2] != null ? depths[2].st_versions : depths[2]), 2, 3, {"name":"eq","hash":{},"fn":this.program(12, data, depths),"inverse":this.noop,"data":data}));
+  stack1 = ((helpers.ne || (depth0 && depth0.ne) || helperMissing).call(depth0, (depths[2] != null ? depths[2].st_versions : depths[2]), (depth0 != null ? depth0.st_versions : depth0), {"name":"ne","hash":{},"fn":this.program(12, data, depths),"inverse":this.noop,"data":data}));
   if (stack1 != null) { buffer += stack1; }
   buffer += " ";
   stack1 = this.invokePartial(partials.version_qualifiers, '', 'version_qualifiers', depth0, undefined, helpers, partials, data);
@@ -21415,54 +21468,54 @@ Backbone.addBeforePopState = function(BB) {
   return buffer + " "
     + escapeExpression(((helper = (helper = helpers.version || (depth0 != null ? depth0.version : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"version","hash":{},"data":data}) : helper)))
     + " </div> ";
-},"19":function(depth0,helpers,partials,data) {
+},"24":function(depth0,helpers,partials,data) {
   var stack1, lambda=this.lambda, escapeExpression=this.escapeExpression;
   return " <span>"
     + escapeExpression(lambda(((stack1 = ((stack1 = (depth0 != null ? depth0.versions : depth0)) != null ? stack1['0'] : stack1)) != null ? stack1.version : stack1), depth0))
     + "</span> ";
-},"21":function(depth0,helpers,partials,data) {
+},"26":function(depth0,helpers,partials,data) {
   var helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression;
   return " <li class=\"issues\"> <label>Issues</label> <span>"
     + escapeExpression(((helpers.url_abbr || (depth0 && depth0.url_abbr) || helperMissing).call(depth0, (depth0 != null ? depth0.issues : depth0), true, {"name":"url_abbr","hash":{},"data":data})))
     + "</span> </li> ";
-},"23":function(depth0,helpers,partials,data) {
+},"28":function(depth0,helpers,partials,data) {
   var helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression;
   return " <li class=\"donate\"> <label>Donate</label> <span>"
     + escapeExpression(((helpers.url_abbr || (depth0 && depth0.url_abbr) || helperMissing).call(depth0, (depth0 != null ? depth0.donate : depth0), true, {"name":"url_abbr","hash":{},"data":data})))
     + "</span> </li> ";
-},"25":function(depth0,helpers,partials,data) {
+},"30":function(depth0,helpers,partials,data) {
   var helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression;
   return " <li class=\"buy\"> <label>Buy</label> <span>"
     + escapeExpression(((helpers.url_abbr || (depth0 && depth0.url_abbr) || helperMissing).call(depth0, (depth0 != null ? depth0.buy : depth0), true, {"name":"url_abbr","hash":{},"data":data})))
     + "</span> </li> ";
-},"27":function(depth0,helpers,partials,data) {
+},"32":function(depth0,helpers,partials,data) {
   var helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression;
   return " <th scope=\"col\">"
     + escapeExpression(((helpers.date_format || (depth0 && depth0.date_format) || helperMissing).call(depth0, depth0, "%b %-d", {"name":"date_format","hash":{},"data":data})))
     + "</th> ";
-},"29":function(depth0,helpers,partials,data) {
+},"34":function(depth0,helpers,partials,data) {
   var stack1, helper, functionType="function", helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, buffer = " <tr class=\"platform\"> <th scope=\"row\">"
     + escapeExpression(((helper = (helper = helpers.platform || (depth0 != null ? depth0.platform : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"platform","hash":{},"data":data}) : helper)))
     + "</th> ";
-  stack1 = helpers.each.call(depth0, (depth0 != null ? depth0.totals : depth0), {"name":"each","hash":{},"fn":this.program(30, data),"inverse":this.noop,"data":data});
+  stack1 = helpers.each.call(depth0, (depth0 != null ? depth0.totals : depth0), {"name":"each","hash":{},"fn":this.program(35, data),"inverse":this.noop,"data":data});
   if (stack1 != null) { buffer += stack1; }
   return buffer + " </tr> ";
-},"30":function(depth0,helpers,partials,data) {
+},"35":function(depth0,helpers,partials,data) {
   var lambda=this.lambda, escapeExpression=this.escapeExpression;
   return " <td>"
     + escapeExpression(lambda(depth0, depth0))
     + "</td> ";
-},"32":function(depth0,helpers,partials,data) {
+},"37":function(depth0,helpers,partials,data) {
   var helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression;
   return " <dl class=\"readme\"> <dt>Source</dt> <dd>"
     + escapeExpression(((helpers.url_abbr || (depth0 && depth0.url_abbr) || helperMissing).call(depth0, (depth0 != null ? depth0.readme : depth0), true, {"name":"url_abbr","hash":{},"data":data})))
     + "</dd> </dl> ";
-},"34":function(depth0,helpers,partials,data) {
+},"39":function(depth0,helpers,partials,data) {
   var stack1, helper, functionType="function", helperMissing=helpers.helperMissing, buffer = " ";
   stack1 = ((helper = (helper = helpers.readme_html || (depth0 != null ? depth0.readme_html : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"readme_html","hash":{},"data":data}) : helper));
   if (stack1 != null) { buffer += stack1; }
   return buffer + " ";
-},"36":function(depth0,helpers,partials,data) {
+},"41":function(depth0,helpers,partials,data) {
   return " <p><em>No readme provided</em></p> ";
   },"compiler":[6,">= 2.0.0-beta.1"],"main":function(depth0,helpers,partials,data,depths) {
   var stack1, helper, helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, functionType="function", buffer = escapeExpression(((helpers.title || (depth0 && depth0.title) || helperMissing).call(depth0, (depth0 != null ? depth0.name : depth0), "Packages", {"name":"title","hash":{},"data":data})))
@@ -21477,7 +21530,7 @@ Backbone.addBeforePopState = function(BB) {
   stack1 = this.invokePartial(partials.package_compat, '', 'package_compat', depth0, undefined, helpers, partials, data);
   if (stack1 != null) { buffer += stack1; }
   buffer += " ";
-  stack1 = ((helpers.contains || (depth0 && depth0.contains) || helperMissing).call(depth0, (depth0 != null ? depth0.st_versions : depth0), 2, 3, {"name":"contains","hash":{},"fn":this.program(1, data, depths),"inverse":this.noop,"data":data}));
+  stack1 = ((helpers.contains || (depth0 && depth0.contains) || helperMissing).call(depth0, (depth0 != null ? depth0.st_versions : depth0), 2, 3, 4, {"name":"contains","hash":{},"fn":this.program(1, data, depths),"inverse":this.noop,"data":data}));
   if (stack1 != null) { buffer += stack1; }
   buffer += " ";
   stack1 = this.invokePartial(partials.package_badges, '', 'package_badges', depth0, undefined, helpers, partials, data);
@@ -21494,18 +21547,18 @@ Backbone.addBeforePopState = function(BB) {
   stack1 = ((helpers.length || (depth0 && depth0.length) || helperMissing).call(depth0, (depth0 != null ? depth0.versions : depth0), "ne", 1, {"name":"length","hash":{},"fn":this.program(7, data, depths),"inverse":this.noop,"data":data}));
   if (stack1 != null) { buffer += stack1; }
   buffer += "</label> ";
-  stack1 = ((helpers.length || (depth0 && depth0.length) || helperMissing).call(depth0, (depth0 != null ? depth0.versions : depth0), "ne", 1, {"name":"length","hash":{},"fn":this.program(9, data, depths),"inverse":this.program(19, data, depths),"data":data}));
+  stack1 = ((helpers.length || (depth0 && depth0.length) || helperMissing).call(depth0, (depth0 != null ? depth0.versions : depth0), "ne", 1, {"name":"length","hash":{},"fn":this.program(9, data, depths),"inverse":this.program(24, data, depths),"data":data}));
   if (stack1 != null) { buffer += stack1; }
   buffer += " </li> <li class=\"homepage\"> <label>Homepage</label> <span>"
     + escapeExpression(((helpers.url_abbr || (depth0 && depth0.url_abbr) || helperMissing).call(depth0, (depth0 != null ? depth0.homepage : depth0), true, {"name":"url_abbr","hash":{},"data":data})))
     + "</span> </li> ";
-  stack1 = helpers['if'].call(depth0, (depth0 != null ? depth0.issues : depth0), {"name":"if","hash":{},"fn":this.program(21, data, depths),"inverse":this.noop,"data":data});
+  stack1 = helpers['if'].call(depth0, (depth0 != null ? depth0.issues : depth0), {"name":"if","hash":{},"fn":this.program(26, data, depths),"inverse":this.noop,"data":data});
   if (stack1 != null) { buffer += stack1; }
   buffer += " ";
-  stack1 = helpers['if'].call(depth0, (depth0 != null ? depth0.donate : depth0), {"name":"if","hash":{},"fn":this.program(23, data, depths),"inverse":this.noop,"data":data});
+  stack1 = helpers['if'].call(depth0, (depth0 != null ? depth0.donate : depth0), {"name":"if","hash":{},"fn":this.program(28, data, depths),"inverse":this.noop,"data":data});
   if (stack1 != null) { buffer += stack1; }
   buffer += " ";
-  stack1 = helpers['if'].call(depth0, (depth0 != null ? depth0.buy : depth0), {"name":"if","hash":{},"fn":this.program(25, data, depths),"inverse":this.noop,"data":data});
+  stack1 = helpers['if'].call(depth0, (depth0 != null ? depth0.buy : depth0), {"name":"if","hash":{},"fn":this.program(30, data, depths),"inverse":this.noop,"data":data});
   if (stack1 != null) { buffer += stack1; }
   buffer += " <li class=\"modified\"> <label>Modified</label> <span title=\""
     + escapeExpression(((helpers.date_format || (depth0 && depth0.date_format) || helperMissing).call(depth0, (depth0 != null ? depth0.last_modified : depth0), "ISO", {"name":"date_format","hash":{},"data":data})))
@@ -21527,7 +21580,7 @@ Backbone.addBeforePopState = function(BB) {
     + escapeExpression(((helpers.num_format || (depth0 && depth0.num_format) || helperMissing).call(depth0, ((stack1 = (depth0 != null ? depth0.installs : depth0)) != null ? stack1.windows : stack1), {"name":"num_format","hash":{},"data":data})))
     + "\" class=\"windows installs\">"
     + escapeExpression(((helpers.num_abbr || (depth0 && depth0.num_abbr) || helperMissing).call(depth0, ((stack1 = (depth0 != null ? depth0.installs : depth0)) != null ? stack1.windows : stack1), {"name":"num_abbr","hash":{},"data":data})))
-    + " <span class=\"key\"></span></span> </li> <li> <span class=\"platform\">OS X</span> <span title=\""
+    + " <span class=\"key\"></span></span> </li> <li> <span class=\"platform\">Mac</span> <span title=\""
     + escapeExpression(((helpers.num_format || (depth0 && depth0.num_format) || helperMissing).call(depth0, ((stack1 = (depth0 != null ? depth0.installs : depth0)) != null ? stack1.osx : stack1), {"name":"num_format","hash":{},"data":data})))
     + "\" class=\"osx installs\">"
     + escapeExpression(((helpers.num_abbr || (depth0 && depth0.num_abbr) || helperMissing).call(depth0, ((stack1 = (depth0 != null ? depth0.installs : depth0)) != null ? stack1.osx : stack1), {"name":"num_abbr","hash":{},"data":data})))
@@ -21536,16 +21589,16 @@ Backbone.addBeforePopState = function(BB) {
     + "\" class=\"linux installs\">"
     + escapeExpression(((helpers.num_abbr || (depth0 && depth0.num_abbr) || helperMissing).call(depth0, ((stack1 = (depth0 != null ? depth0.installs : depth0)) != null ? stack1.linux : stack1), {"name":"num_abbr","hash":{},"data":data})))
     + " <span class=\"key\"></span></span> </li> </ul> <div id=\"daily_installs\"> <table cellspacing=\"0\"> <tr class=\"dates\"> <td class=\"none\"></td> ";
-  stack1 = helpers.each.call(depth0, ((stack1 = ((stack1 = (depth0 != null ? depth0.installs : depth0)) != null ? stack1.daily : stack1)) != null ? stack1.dates : stack1), {"name":"each","hash":{},"fn":this.program(27, data, depths),"inverse":this.noop,"data":data});
+  stack1 = helpers.each.call(depth0, ((stack1 = ((stack1 = (depth0 != null ? depth0.installs : depth0)) != null ? stack1.daily : stack1)) != null ? stack1.dates : stack1), {"name":"each","hash":{},"fn":this.program(32, data, depths),"inverse":this.noop,"data":data});
   if (stack1 != null) { buffer += stack1; }
   buffer += " </tr> ";
-  stack1 = helpers.each.call(depth0, ((stack1 = ((stack1 = (depth0 != null ? depth0.installs : depth0)) != null ? stack1.daily : stack1)) != null ? stack1.data : stack1), {"name":"each","hash":{},"fn":this.program(29, data, depths),"inverse":this.noop,"data":data});
+  stack1 = helpers.each.call(depth0, ((stack1 = ((stack1 = (depth0 != null ? depth0.installs : depth0)) != null ? stack1.daily : stack1)) != null ? stack1.data : stack1), {"name":"each","hash":{},"fn":this.program(34, data, depths),"inverse":this.noop,"data":data});
   if (stack1 != null) { buffer += stack1; }
   buffer += " </table> </div> </div> <div style=\"clear: both\"></div> <div id=\"readme\"> <h2>Readme</h2> ";
-  stack1 = helpers['if'].call(depth0, (depth0 != null ? depth0.readme_html : depth0), {"name":"if","hash":{},"fn":this.program(32, data, depths),"inverse":this.noop,"data":data});
+  stack1 = helpers['if'].call(depth0, (depth0 != null ? depth0.readme_html : depth0), {"name":"if","hash":{},"fn":this.program(37, data, depths),"inverse":this.noop,"data":data});
   if (stack1 != null) { buffer += stack1; }
   buffer += " <div class=\"contents\"> ";
-  stack1 = helpers['if'].call(depth0, (depth0 != null ? depth0.readme_html : depth0), {"name":"if","hash":{},"fn":this.program(34, data, depths),"inverse":this.program(36, data, depths),"data":data});
+  stack1 = helpers['if'].call(depth0, (depth0 != null ? depth0.readme_html : depth0), {"name":"if","hash":{},"fn":this.program(39, data, depths),"inverse":this.program(41, data, depths),"data":data});
   if (stack1 != null) { buffer += stack1; }
   return buffer + " </div> </div> ";
 },"usePartial":true,"useData":true,"useDepths":true});
@@ -21658,46 +21711,61 @@ Backbone.addBeforePopState = function(BB) {
   return "  ";
 },"3":function(depth0,helpers,partials,data) {
   var stack1, helperMissing=helpers.helperMissing, buffer = " ";
-  stack1 = ((helpers.omits || (depth0 && depth0.omits) || helperMissing).call(depth0, (depth0 != null ? depth0.st_versions : depth0), 2, {"name":"omits","hash":{},"fn":this.program(4, data),"inverse":this.noop,"data":data}));
+  stack1 = ((helpers.eq || (depth0 && depth0.eq) || helperMissing).call(depth0, (depth0 != null ? depth0.st_versions : depth0), 4, {"name":"eq","hash":{},"fn":this.program(4, data),"inverse":this.noop,"data":data}));
   if (stack1 != null) { buffer += stack1; }
   buffer += " ";
-  stack1 = ((helpers.omits || (depth0 && depth0.omits) || helperMissing).call(depth0, (depth0 != null ? depth0.st_versions : depth0), 3, {"name":"omits","hash":{},"fn":this.program(6, data),"inverse":this.noop,"data":data}));
+  stack1 = ((helpers.eq || (depth0 && depth0.eq) || helperMissing).call(depth0, (depth0 != null ? depth0.st_versions : depth0), 3, {"name":"eq","hash":{},"fn":this.program(6, data),"inverse":this.noop,"data":data}));
   if (stack1 != null) { buffer += stack1; }
   buffer += " ";
-  stack1 = ((helpers.omits || (depth0 && depth0.omits) || helperMissing).call(depth0, (depth0 != null ? depth0.platforms : depth0), "osx", "linux", {"name":"omits","hash":{},"fn":this.program(8, data),"inverse":this.noop,"data":data}));
+  stack1 = ((helpers.eq || (depth0 && depth0.eq) || helperMissing).call(depth0, (depth0 != null ? depth0.st_versions : depth0), 2, {"name":"eq","hash":{},"fn":this.program(8, data),"inverse":this.noop,"data":data}));
   if (stack1 != null) { buffer += stack1; }
   buffer += " ";
-  stack1 = ((helpers.omits || (depth0 && depth0.omits) || helperMissing).call(depth0, (depth0 != null ? depth0.platforms : depth0), "windows", "linux", {"name":"omits","hash":{},"fn":this.program(10, data),"inverse":this.noop,"data":data}));
+  stack1 = ((helpers.eq || (depth0 && depth0.eq) || helperMissing).call(depth0, (depth0 != null ? depth0.st_versions : depth0), 3, 4, {"name":"eq","hash":{},"fn":this.program(10, data),"inverse":this.noop,"data":data}));
   if (stack1 != null) { buffer += stack1; }
   buffer += " ";
-  stack1 = ((helpers.omits || (depth0 && depth0.omits) || helperMissing).call(depth0, (depth0 != null ? depth0.platforms : depth0), "osx", "windows", {"name":"omits","hash":{},"fn":this.program(12, data),"inverse":this.noop,"data":data}));
+  stack1 = ((helpers.eq || (depth0 && depth0.eq) || helperMissing).call(depth0, (depth0 != null ? depth0.st_versions : depth0), 2, 3, {"name":"eq","hash":{},"fn":this.program(12, data),"inverse":this.noop,"data":data}));
   if (stack1 != null) { buffer += stack1; }
   buffer += " ";
-  stack1 = ((helpers.eq || (depth0 && depth0.eq) || helperMissing).call(depth0, (depth0 != null ? depth0.platforms : depth0), "osx", "linux", {"name":"eq","hash":{},"fn":this.program(14, data),"inverse":this.noop,"data":data}));
+  stack1 = ((helpers.omits || (depth0 && depth0.omits) || helperMissing).call(depth0, (depth0 != null ? depth0.platforms : depth0), "osx", "linux", {"name":"omits","hash":{},"fn":this.program(14, data),"inverse":this.noop,"data":data}));
   if (stack1 != null) { buffer += stack1; }
   buffer += " ";
-  stack1 = ((helpers.eq || (depth0 && depth0.eq) || helperMissing).call(depth0, (depth0 != null ? depth0.platforms : depth0), "windows", "linux", {"name":"eq","hash":{},"fn":this.program(16, data),"inverse":this.noop,"data":data}));
+  stack1 = ((helpers.omits || (depth0 && depth0.omits) || helperMissing).call(depth0, (depth0 != null ? depth0.platforms : depth0), "windows", "linux", {"name":"omits","hash":{},"fn":this.program(16, data),"inverse":this.noop,"data":data}));
   if (stack1 != null) { buffer += stack1; }
   buffer += " ";
-  stack1 = ((helpers.eq || (depth0 && depth0.eq) || helperMissing).call(depth0, (depth0 != null ? depth0.platforms : depth0), "windows", "osx", {"name":"eq","hash":{},"fn":this.program(18, data),"inverse":this.noop,"data":data}));
+  stack1 = ((helpers.omits || (depth0 && depth0.omits) || helperMissing).call(depth0, (depth0 != null ? depth0.platforms : depth0), "osx", "windows", {"name":"omits","hash":{},"fn":this.program(18, data),"inverse":this.noop,"data":data}));
+  if (stack1 != null) { buffer += stack1; }
+  buffer += " ";
+  stack1 = ((helpers.eq || (depth0 && depth0.eq) || helperMissing).call(depth0, (depth0 != null ? depth0.platforms : depth0), "osx", "linux", {"name":"eq","hash":{},"fn":this.program(20, data),"inverse":this.noop,"data":data}));
+  if (stack1 != null) { buffer += stack1; }
+  buffer += " ";
+  stack1 = ((helpers.eq || (depth0 && depth0.eq) || helperMissing).call(depth0, (depth0 != null ? depth0.platforms : depth0), "windows", "linux", {"name":"eq","hash":{},"fn":this.program(22, data),"inverse":this.noop,"data":data}));
+  if (stack1 != null) { buffer += stack1; }
+  buffer += " ";
+  stack1 = ((helpers.eq || (depth0 && depth0.eq) || helperMissing).call(depth0, (depth0 != null ? depth0.platforms : depth0), "windows", "osx", {"name":"eq","hash":{},"fn":this.program(24, data),"inverse":this.noop,"data":data}));
   if (stack1 != null) { buffer += stack1; }
   return buffer + " ";
 },"4":function(depth0,helpers,partials,data) {
-  return "<span class=\"versions only\" title=\"Only works with Sublime Text 3\">3</span>";
+  return "<span class=\"versions only\" title=\"Only works with Sublime Text 4\">4</span>";
   },"6":function(depth0,helpers,partials,data) {
-  return "<span class=\"versions only\" title=\"Only works with Sublime Text 2\">2</span>";
+  return "<span class=\"versions only\" title=\"Only works with Sublime Text 3\">3</span>";
   },"8":function(depth0,helpers,partials,data) {
-  return "<span class=\"platforms windows\" title=\"Only available on Windows\">W</span>";
+  return "<span class=\"versions only\" title=\"Only works with Sublime Text 2\">2</span>";
   },"10":function(depth0,helpers,partials,data) {
-  return "<span class=\"platforms osx\" title=\"Only available on OS X\">O</span>";
+  return "<span class=\"versions only\" title=\"Works with Sublime Text 3+\">3</span>";
   },"12":function(depth0,helpers,partials,data) {
-  return "<span class=\"platforms linux\" title=\"Only available on Linux\">L</span>";
+  return "<span class=\"versions only\" title=\"Works with Sublime Text 2 and 3\">2/3</span>";
   },"14":function(depth0,helpers,partials,data) {
-  return "<span class=\"platforms osx also-before\" title=\"Only available on OS X and Linux\">O</span><span class=\"platforms linux also-after\" title=\"Only available on OS X and Linux\">L</span>";
+  return "<span class=\"platforms windows\" title=\"Only available on Windows\">W</span>";
   },"16":function(depth0,helpers,partials,data) {
-  return "<span class=\"platforms windows also-before\" title=\"Only available on Windows and Linux\">W</span><span class=\"platforms linux also-after\" title=\"Only available on Windows and Linux\">L</span>";
+  return "<span class=\"platforms osx\" title=\"Only available on Mac\">M</span>";
   },"18":function(depth0,helpers,partials,data) {
-  return "<span class=\"platforms windows also-before\" title=\"Only available on Windows and OS X\">W</span><span class=\"platforms osx also-after\" title=\"Only available on Windows and OS X\">O</span>";
+  return "<span class=\"platforms linux\" title=\"Only available on Linux\">L</span>";
+  },"20":function(depth0,helpers,partials,data) {
+  return "<span class=\"platforms osx also-before\" title=\"Only available on Mac and Linux\">M</span><span class=\"platforms linux also-after\" title=\"Only available on Mac and Linux\">L</span>";
+  },"22":function(depth0,helpers,partials,data) {
+  return "<span class=\"platforms windows also-before\" title=\"Only available on Windows and Linux\">W</span><span class=\"platforms linux also-after\" title=\"Only available on Windows and Linux\">L</span>";
+  },"24":function(depth0,helpers,partials,data) {
+  return "<span class=\"platforms windows also-before\" title=\"Only available on Windows and Mac\">W</span><span class=\"platforms osx also-after\" title=\"Only available on Windows and Mac\">M</span>";
   },"compiler":[6,">= 2.0.0-beta.1"],"main":function(depth0,helpers,partials,data) {
   var stack1, helperMissing=helpers.helperMissing, buffer = "";
   stack1 = ((helpers.omits || (depth0 && depth0.omits) || helperMissing).call(depth0, (depth0 != null ? depth0.platforms : depth0), "osx", "linux", "windows", {"name":"omits","hash":{},"fn":this.program(1, data),"inverse":this.program(3, data),"data":data}));
@@ -21802,46 +21870,61 @@ Backbone.addBeforePopState = function(BB) {
   return "  ";
 },"3":function(depth0,helpers,partials,data) {
   var stack1, helperMissing=helpers.helperMissing, buffer = " ";
-  stack1 = ((helpers.omits || (depth0 && depth0.omits) || helperMissing).call(depth0, (depth0 != null ? depth0.st_versions : depth0), 2, {"name":"omits","hash":{},"fn":this.program(4, data),"inverse":this.noop,"data":data}));
+  stack1 = ((helpers.eq || (depth0 && depth0.eq) || helperMissing).call(depth0, (depth0 != null ? depth0.st_versions : depth0), 4, {"name":"eq","hash":{},"fn":this.program(4, data),"inverse":this.noop,"data":data}));
   if (stack1 != null) { buffer += stack1; }
   buffer += " ";
-  stack1 = ((helpers.omits || (depth0 && depth0.omits) || helperMissing).call(depth0, (depth0 != null ? depth0.st_versions : depth0), 3, {"name":"omits","hash":{},"fn":this.program(6, data),"inverse":this.noop,"data":data}));
+  stack1 = ((helpers.eq || (depth0 && depth0.eq) || helperMissing).call(depth0, (depth0 != null ? depth0.st_versions : depth0), 3, {"name":"eq","hash":{},"fn":this.program(6, data),"inverse":this.noop,"data":data}));
   if (stack1 != null) { buffer += stack1; }
   buffer += " ";
-  stack1 = ((helpers.omits || (depth0 && depth0.omits) || helperMissing).call(depth0, (depth0 != null ? depth0.platforms : depth0), "osx", "linux", {"name":"omits","hash":{},"fn":this.program(8, data),"inverse":this.noop,"data":data}));
+  stack1 = ((helpers.eq || (depth0 && depth0.eq) || helperMissing).call(depth0, (depth0 != null ? depth0.st_versions : depth0), 2, {"name":"eq","hash":{},"fn":this.program(8, data),"inverse":this.noop,"data":data}));
   if (stack1 != null) { buffer += stack1; }
   buffer += " ";
-  stack1 = ((helpers.omits || (depth0 && depth0.omits) || helperMissing).call(depth0, (depth0 != null ? depth0.platforms : depth0), "windows", "linux", {"name":"omits","hash":{},"fn":this.program(10, data),"inverse":this.noop,"data":data}));
+  stack1 = ((helpers.eq || (depth0 && depth0.eq) || helperMissing).call(depth0, (depth0 != null ? depth0.st_versions : depth0), 3, 4, {"name":"eq","hash":{},"fn":this.program(10, data),"inverse":this.noop,"data":data}));
   if (stack1 != null) { buffer += stack1; }
   buffer += " ";
-  stack1 = ((helpers.omits || (depth0 && depth0.omits) || helperMissing).call(depth0, (depth0 != null ? depth0.platforms : depth0), "osx", "windows", {"name":"omits","hash":{},"fn":this.program(12, data),"inverse":this.noop,"data":data}));
+  stack1 = ((helpers.eq || (depth0 && depth0.eq) || helperMissing).call(depth0, (depth0 != null ? depth0.st_versions : depth0), 2, 3, {"name":"eq","hash":{},"fn":this.program(12, data),"inverse":this.noop,"data":data}));
   if (stack1 != null) { buffer += stack1; }
   buffer += " ";
-  stack1 = ((helpers.eq || (depth0 && depth0.eq) || helperMissing).call(depth0, (depth0 != null ? depth0.platforms : depth0), "osx", "linux", {"name":"eq","hash":{},"fn":this.program(14, data),"inverse":this.noop,"data":data}));
+  stack1 = ((helpers.omits || (depth0 && depth0.omits) || helperMissing).call(depth0, (depth0 != null ? depth0.platforms : depth0), "osx", "linux", {"name":"omits","hash":{},"fn":this.program(14, data),"inverse":this.noop,"data":data}));
   if (stack1 != null) { buffer += stack1; }
   buffer += " ";
-  stack1 = ((helpers.eq || (depth0 && depth0.eq) || helperMissing).call(depth0, (depth0 != null ? depth0.platforms : depth0), "windows", "linux", {"name":"eq","hash":{},"fn":this.program(16, data),"inverse":this.noop,"data":data}));
+  stack1 = ((helpers.omits || (depth0 && depth0.omits) || helperMissing).call(depth0, (depth0 != null ? depth0.platforms : depth0), "windows", "linux", {"name":"omits","hash":{},"fn":this.program(16, data),"inverse":this.noop,"data":data}));
   if (stack1 != null) { buffer += stack1; }
   buffer += " ";
-  stack1 = ((helpers.eq || (depth0 && depth0.eq) || helperMissing).call(depth0, (depth0 != null ? depth0.platforms : depth0), "windows", "osx", {"name":"eq","hash":{},"fn":this.program(18, data),"inverse":this.noop,"data":data}));
+  stack1 = ((helpers.omits || (depth0 && depth0.omits) || helperMissing).call(depth0, (depth0 != null ? depth0.platforms : depth0), "osx", "windows", {"name":"omits","hash":{},"fn":this.program(18, data),"inverse":this.noop,"data":data}));
+  if (stack1 != null) { buffer += stack1; }
+  buffer += " ";
+  stack1 = ((helpers.eq || (depth0 && depth0.eq) || helperMissing).call(depth0, (depth0 != null ? depth0.platforms : depth0), "osx", "linux", {"name":"eq","hash":{},"fn":this.program(20, data),"inverse":this.noop,"data":data}));
+  if (stack1 != null) { buffer += stack1; }
+  buffer += " ";
+  stack1 = ((helpers.eq || (depth0 && depth0.eq) || helperMissing).call(depth0, (depth0 != null ? depth0.platforms : depth0), "windows", "linux", {"name":"eq","hash":{},"fn":this.program(22, data),"inverse":this.noop,"data":data}));
+  if (stack1 != null) { buffer += stack1; }
+  buffer += " ";
+  stack1 = ((helpers.eq || (depth0 && depth0.eq) || helperMissing).call(depth0, (depth0 != null ? depth0.platforms : depth0), "windows", "osx", {"name":"eq","hash":{},"fn":this.program(24, data),"inverse":this.noop,"data":data}));
   if (stack1 != null) { buffer += stack1; }
   return buffer + " ";
 },"4":function(depth0,helpers,partials,data) {
-  return "<span class=\"versions only\" title=\"Only works with Sublime Text 3\">ST3</span>";
+  return "<span class=\"versions only\" title=\"Only works with Sublime Text 4\">ST4</span>";
   },"6":function(depth0,helpers,partials,data) {
-  return "<span class=\"versions only\" title=\"Only works with Sublime Text 2\">ST2</span>";
+  return "<span class=\"versions only\" title=\"Only works with Sublime Text 3\">ST3</span>";
   },"8":function(depth0,helpers,partials,data) {
-  return "<span class=\"platforms windows\" title=\"Only available on Windows\">Win</span>";
+  return "<span class=\"versions only\" title=\"Only works with Sublime Text 2\">ST2</span>";
   },"10":function(depth0,helpers,partials,data) {
-  return "<span class=\"platforms osx\" title=\"Only available on OS X\">OS X</span>";
+  return "<span class=\"versions only\" title=\"Works with Sublime Text 3+\">ST3</span>";
   },"12":function(depth0,helpers,partials,data) {
-  return "<span class=\"platforms linux\" title=\"Only available on Linux\">Linux</span>";
+  return "<span class=\"versions only\" title=\"Works with Sublime Text 2 and 3\">ST2/ST3</span>";
   },"14":function(depth0,helpers,partials,data) {
-  return "<span class=\"platforms osx also-before\" title=\"Only available on OS X and Linux\">OS X</span><span class=\"platforms linux also-after\" title=\"Only available on OS X and Linux\">Linux</span>";
+  return "<span class=\"platforms windows\" title=\"Only available on Windows\">Win</span>";
   },"16":function(depth0,helpers,partials,data) {
-  return "<span class=\"platforms windows also-before\" title=\"Only available on Windows and Linux\">Win</span><span class=\"platforms linux also-after\" title=\"Only available on Windows and Linux\">Linux</span>";
+  return "<span class=\"platforms osx\" title=\"Only available on Mac\">Mac</span>";
   },"18":function(depth0,helpers,partials,data) {
-  return "<span class=\"platforms windows also-before\" title=\"Only available on Windows and OS X\">Win</span><span class=\"platforms osx also-after\" title=\"Only available on Windows and OS X\">OS X</span>";
+  return "<span class=\"platforms linux\" title=\"Only available on Linux\">Linux</span>";
+  },"20":function(depth0,helpers,partials,data) {
+  return "<span class=\"platforms osx also-before\" title=\"Only available on Mac and Linux\">Mac</span><span class=\"platforms linux also-after\" title=\"Only available on Mac and Linux\">Linux</span>";
+  },"22":function(depth0,helpers,partials,data) {
+  return "<span class=\"platforms windows also-before\" title=\"Only available on Windows and Linux\">Win</span><span class=\"platforms linux also-after\" title=\"Only available on Windows and Linux\">Linux</span>";
+  },"24":function(depth0,helpers,partials,data) {
+  return "<span class=\"platforms windows also-before\" title=\"Only available on Windows and Mac\">Win</span><span class=\"platforms osx also-after\" title=\"Only available on Windows and Mac\">Mac</span>";
   },"compiler":[6,">= 2.0.0-beta.1"],"main":function(depth0,helpers,partials,data) {
   var stack1, helperMissing=helpers.helperMissing, buffer = "";
   stack1 = ((helpers.omits || (depth0 && depth0.omits) || helperMissing).call(depth0, (depth0 != null ? depth0.platforms : depth0), "osx", "linux", "windows", {"name":"omits","hash":{},"fn":this.program(1, data),"inverse":this.program(3, data),"data":data}));
@@ -22085,7 +22168,7 @@ Backbone.addBeforePopState = function(BB) {
   },"3":function(depth0,helpers,partials,data) {
   return "<span class=\"platforms windows\" title=\"Windows\">W</span>";
   },"5":function(depth0,helpers,partials,data) {
-  return "<span class=\"platforms osx\" title=\"OS X\">O</span>";
+  return "<span class=\"platforms osx\" title=\"Mac\">M</span>";
   },"7":function(depth0,helpers,partials,data) {
   return "<span class=\"platforms linux\" title=\"Linux x32\">L32</span>";
   },"9":function(depth0,helpers,partials,data) {
@@ -22095,11 +22178,11 @@ Backbone.addBeforePopState = function(BB) {
   },"13":function(depth0,helpers,partials,data) {
   return "<span class=\"platforms windows\" title=\"Windows x64\">W64</span>";
   },"15":function(depth0,helpers,partials,data) {
-  return "<span class=\"platforms osx also-before\" title=\"OS X and Linux\">O</span><span class=\"platforms linux also-after\" title=\"OS X and Linux\">L</span>";
+  return "<span class=\"platforms osx also-before\" title=\"Mac and Linux\">M</span><span class=\"platforms linux also-after\" title=\"Mac and Linux\">L</span>";
   },"17":function(depth0,helpers,partials,data) {
   return "<span class=\"platforms windows also-before\" title=\"Windows and Linux\">W</span><span class=\"platforms linux also-after\" title=\"Windows and Linux\">L</span>";
   },"19":function(depth0,helpers,partials,data) {
-  return "<span class=\"platforms windows also-before\" title=\"Windows and OS X\">W</span><span class=\"platforms osx also-after\" title=\"Windows and OS X\">O</span>";
+  return "<span class=\"platforms windows also-before\" title=\"Windows and Mac\">W</span><span class=\"platforms osx also-after\" title=\"Windows and Mac\">M</span>";
   },"compiler":[6,">= 2.0.0-beta.1"],"main":function(depth0,helpers,partials,data) {
   var stack1, helperMissing=helpers.helperMissing, buffer = "";
   stack1 = ((helpers.eq || (depth0 && depth0.eq) || helperMissing).call(depth0, (depth0 != null ? depth0.platforms : depth0), "linux", {"name":"eq","hash":{},"fn":this.program(1, data),"inverse":this.noop,"data":data}));
@@ -22248,7 +22331,7 @@ Backbone.addBeforePopState = function(BB) {
     + escapeExpression(((helpers.num_format || (depth0 && depth0.num_format) || helperMissing).call(depth0, (depth0 != null ? depth0.windows_packages : depth0), {"name":"num_format","hash":{},"data":data})))
     + "</span> Win </span> <span class=\"platform osx\"> <span class=\"number\">"
     + escapeExpression(((helpers.num_format || (depth0 && depth0.num_format) || helperMissing).call(depth0, (depth0 != null ? depth0.osx_packages : depth0), {"name":"num_format","hash":{},"data":data})))
-    + "</span> OS X </span> <span class=\"platform linux\"> <span class=\"number\">"
+    + "</span> Mac </span> <span class=\"platform linux\"> <span class=\"number\">"
     + escapeExpression(((helpers.num_format || (depth0 && depth0.num_format) || helperMissing).call(depth0, (depth0 != null ? depth0.linux_packages : depth0), {"name":"num_format","hash":{},"data":data})))
     + "</span> Linux </span> </div> </div> <div class=\"json\"> <div class=\"main\"> <span class=\"number\"> "
     + escapeExpression(((helpers.num_format || (depth0 && depth0.num_format) || helperMissing).call(depth0, (depth0 != null ? depth0.total_labels : depth0), {"name":"num_format","hash":{},"data":data})))
@@ -22266,7 +22349,7 @@ Backbone.addBeforePopState = function(BB) {
     + escapeExpression(((helpers.num_format || (depth0 && depth0.num_format) || helperMissing).call(depth0, (depth0 != null ? depth0.osx_users : depth0), {"name":"num_format","hash":{},"data":data})))
     + "\">"
     + escapeExpression(((helpers.num_abbr || (depth0 && depth0.num_abbr) || helperMissing).call(depth0, (depth0 != null ? depth0.osx_users : depth0), {"name":"num_abbr","hash":{},"data":data})))
-    + "</span> OS X </span> <span class=\"platform linux\"> <span class=\"number\" title=\""
+    + "</span> Mac </span> <span class=\"platform linux\"> <span class=\"number\" title=\""
     + escapeExpression(((helpers.num_format || (depth0 && depth0.num_format) || helperMissing).call(depth0, (depth0 != null ? depth0.linux_users : depth0), {"name":"num_format","hash":{},"data":data})))
     + "\">"
     + escapeExpression(((helpers.num_abbr || (depth0 && depth0.num_abbr) || helperMissing).call(depth0, (depth0 != null ? depth0.linux_users : depth0), {"name":"num_abbr","hash":{},"data":data})))
@@ -22280,7 +22363,7 @@ Backbone.addBeforePopState = function(BB) {
     + escapeExpression(((helpers.num_abbr || (depth0 && depth0.num_abbr) || helperMissing).call(depth0, (depth0 != null ? depth0.windows_installs : depth0), {"name":"num_abbr","hash":{},"data":data})))
     + "</span> Win </span> <span class=\"platform osx\"> <span class=\"number\">"
     + escapeExpression(((helpers.num_abbr || (depth0 && depth0.num_abbr) || helperMissing).call(depth0, (depth0 != null ? depth0.osx_installs : depth0), {"name":"num_abbr","hash":{},"data":data})))
-    + "</span> OS X </span> <span class=\"platform linux\"> <span class=\"number\">"
+    + "</span> Mac </span> <span class=\"platform linux\"> <span class=\"number\">"
     + escapeExpression(((helpers.num_abbr || (depth0 && depth0.num_abbr) || helperMissing).call(depth0, (depth0 != null ? depth0.linux_installs : depth0), {"name":"num_abbr","hash":{},"data":data})))
     + "</span> Linux </span> </div> </div> <div class=\"actions\"> <div class=\"main\"> <span class=\"number\">"
     + escapeExpression(((helpers.num_abbr || (depth0 && depth0.num_abbr) || helperMissing).call(depth0, (depth0 != null ? depth0.submissions : depth0), {"name":"num_abbr","hash":{},"data":data})))
@@ -22291,6 +22374,83 @@ Backbone.addBeforePopState = function(BB) {
     + " requests\"> "
     + escapeExpression(((helpers.filesize_abbr || (depth0 && depth0.filesize_abbr) || helperMissing).call(depth0, (depth0 != null ? depth0.json_bytes_served : depth0), {"name":"filesize_abbr","hash":{},"data":data})))
     + " </span> <span class=\"stat\">JSON Served</span> </div> </div> </section> ";
+},"useData":true});
+}).call(this);
+(function() {
+  var template  = Handlebars.template,
+      templates = Handlebars.templates = Handlebars.templates || {};
+  templates['test_repo'] = template({"1":function(depth0,helpers,partials,data) {
+  var stack1, helperMissing=helpers.helperMissing, buffer = " ";
+  stack1 = ((helpers.eq || (depth0 && depth0.eq) || helperMissing).call(depth0, ((stack1 = (depth0 != null ? depth0.result : depth0)) != null ? stack1.result : stack1), "success", {"name":"eq","hash":{},"fn":this.program(2, data),"inverse":this.program(4, data),"data":data}));
+  if (stack1 != null) { buffer += stack1; }
+  return buffer + " ";
+},"2":function(depth0,helpers,partials,data) {
+  return " <p class=\"success\"> All tests ran successfully! </p> ";
+  },"4":function(depth0,helpers,partials,data) {
+  var stack1, helperMissing=helpers.helperMissing, buffer = " ";
+  stack1 = ((helpers.gt || (depth0 && depth0.gt) || helperMissing).call(depth0, ((stack1 = ((stack1 = (depth0 != null ? depth0.result : depth0)) != null ? stack1.details : stack1)) != null ? stack1.num_errors : stack1), 0, {"name":"gt","hash":{},"fn":this.program(5, data),"inverse":this.noop,"data":data}));
+  if (stack1 != null) { buffer += stack1; }
+  buffer += " ";
+  stack1 = ((helpers.gt || (depth0 && depth0.gt) || helperMissing).call(depth0, ((stack1 = ((stack1 = (depth0 != null ? depth0.result : depth0)) != null ? stack1.details : stack1)) != null ? stack1.num_warnings : stack1), 0, {"name":"gt","hash":{},"fn":this.program(11, data),"inverse":this.noop,"data":data}));
+  if (stack1 != null) { buffer += stack1; }
+  return buffer + " ";
+},"5":function(depth0,helpers,partials,data) {
+  var stack1, lambda=this.lambda, escapeExpression=this.escapeExpression, helperMissing=helpers.helperMissing, buffer = " <div class=\"error\"> <p> "
+    + escapeExpression(lambda(((stack1 = ((stack1 = (depth0 != null ? depth0.result : depth0)) != null ? stack1.details : stack1)) != null ? stack1.num_errors : stack1), depth0))
+    + " Error";
+  stack1 = ((helpers.ne || (depth0 && depth0.ne) || helperMissing).call(depth0, ((stack1 = ((stack1 = (depth0 != null ? depth0.result : depth0)) != null ? stack1.details : stack1)) != null ? stack1.num_errors : stack1), 1, {"name":"ne","hash":{},"fn":this.program(6, data),"inverse":this.noop,"data":data}));
+  if (stack1 != null) { buffer += stack1; }
+  buffer += " </p> <ul> ";
+  stack1 = helpers.each.call(depth0, ((stack1 = ((stack1 = (depth0 != null ? depth0.result : depth0)) != null ? stack1.details : stack1)) != null ? stack1.errors : stack1), {"name":"each","hash":{},"fn":this.program(8, data),"inverse":this.noop,"data":data});
+  if (stack1 != null) { buffer += stack1; }
+  return buffer + " </ul> </div> ";
+},"6":function(depth0,helpers,partials,data) {
+  return "s";
+  },"8":function(depth0,helpers,partials,data) {
+  var stack1, lambda=this.lambda, escapeExpression=this.escapeExpression, buffer = " <li> "
+    + escapeExpression(lambda((depth0 != null ? depth0.message : depth0), depth0))
+    + " ";
+  stack1 = helpers.each.call(depth0, (depth0 != null ? depth0.details : depth0), {"name":"each","hash":{},"fn":this.program(9, data),"inverse":this.noop,"data":data});
+  if (stack1 != null) { buffer += stack1; }
+  return buffer + " </li> ";
+},"9":function(depth0,helpers,partials,data) {
+  var lambda=this.lambda, escapeExpression=this.escapeExpression;
+  return " <br>"
+    + escapeExpression(lambda(depth0, depth0))
+    + " ";
+},"11":function(depth0,helpers,partials,data) {
+  var stack1, lambda=this.lambda, escapeExpression=this.escapeExpression, helperMissing=helpers.helperMissing, buffer = " <div class=\"warning\"> <p> "
+    + escapeExpression(lambda(((stack1 = ((stack1 = (depth0 != null ? depth0.result : depth0)) != null ? stack1.details : stack1)) != null ? stack1.num_warnings : stack1), depth0))
+    + " Warning";
+  stack1 = ((helpers.ne || (depth0 && depth0.ne) || helperMissing).call(depth0, ((stack1 = ((stack1 = (depth0 != null ? depth0.result : depth0)) != null ? stack1.details : stack1)) != null ? stack1.num_warnings : stack1), 1, {"name":"ne","hash":{},"fn":this.program(6, data),"inverse":this.noop,"data":data}));
+  if (stack1 != null) { buffer += stack1; }
+  buffer += " </p> <ul> ";
+  stack1 = helpers.each.call(depth0, ((stack1 = ((stack1 = (depth0 != null ? depth0.result : depth0)) != null ? stack1.details : stack1)) != null ? stack1.warnings : stack1), {"name":"each","hash":{},"fn":this.program(8, data),"inverse":this.noop,"data":data});
+  if (stack1 != null) { buffer += stack1; }
+  return buffer + " </ul> </div> ";
+},"13":function(depth0,helpers,partials,data) {
+  var stack1, buffer = " ";
+  stack1 = helpers['if'].call(depth0, (depth0 != null ? depth0.error : depth0), {"name":"if","hash":{},"fn":this.program(14, data),"inverse":this.noop,"data":data});
+  if (stack1 != null) { buffer += stack1; }
+  buffer += " ";
+  stack1 = helpers['if'].call(depth0, (depth0 != null ? depth0.running : depth0), {"name":"if","hash":{},"fn":this.program(16, data),"inverse":this.noop,"data":data});
+  if (stack1 != null) { buffer += stack1; }
+  return buffer + " ";
+},"14":function(depth0,helpers,partials,data) {
+  var helper, functionType="function", helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression;
+  return " <div class=\"error\"> <p> "
+    + escapeExpression(((helper = (helper = helpers.error || (depth0 != null ? depth0.error : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"error","hash":{},"data":data}) : helper)))
+    + " </p> </div> ";
+},"16":function(depth0,helpers,partials,data) {
+  return " <p class=\"status\"> Running repository tests… </p> ";
+  },"compiler":[6,">= 2.0.0-beta.1"],"main":function(depth0,helpers,partials,data) {
+  var stack1, helper, helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, functionType="function", buffer = escapeExpression(((helpers.title || (depth0 && depth0.title) || helperMissing).call(depth0, "Test Repository JSON", {"name":"title","hash":{},"data":data})))
+    + " <h1>Test Repository JSON</h1> <p> Use the form below to test your repository JSON to ensure Package Control will be able to index your package. </p> ";
+  stack1 = helpers['if'].call(depth0, (depth0 != null ? depth0.result : depth0), {"name":"if","hash":{},"fn":this.program(1, data),"inverse":this.program(13, data),"data":data});
+  if (stack1 != null) { buffer += stack1; }
+  return buffer + " <form> <label>Repository JSON</label> <textarea id=\"repo_json\" rows=\"20\" cols=\"100\">"
+    + escapeExpression(((helper = (helper = helpers.json_string || (depth0 != null ? depth0.json_string : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"json_string","hash":{},"data":data}) : helper)))
+    + "</textarea> <button>Submit</button> </form> ";
 },"useData":true});
 }).call(this);
 (function() {

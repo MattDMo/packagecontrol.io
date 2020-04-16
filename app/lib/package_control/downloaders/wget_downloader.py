@@ -82,8 +82,15 @@ class WgetDownloader(CliDownloader, DecodingDownloader, LimitingDownloader, Cach
                 return cached
 
         self.tmp_file = tempfile.NamedTemporaryFile().name
-        command = [self.wget, '--connect-timeout=' + str_cls(int(timeout)), '-o',
-            self.tmp_file, '-O', '-', '--secure-protocol=TLSv1']
+        command = [
+            self.wget,
+            '--connect-timeout=' + str_cls(int(timeout)),
+            '-o',
+            self.tmp_file,
+            '-O',
+            '-',
+            '--secure-protocol=TLSv1'
+        ]
 
         user_agent = self.settings.get('user_agent')
         if user_agent:
@@ -150,8 +157,7 @@ class WgetDownloader(CliDownloader, DecodingDownloader, LimitingDownloader, Cach
                 encoding = headers.get('content-encoding')
                 result = self.decode_response(encoding, result)
 
-                result = self.cache_result('get', url, general['status'],
-                    headers, result)
+                result = self.cache_result('get', url, general['status'], headers, result)
 
                 return result
 
@@ -162,8 +168,7 @@ class WgetDownloader(CliDownloader, DecodingDownloader, LimitingDownloader, Cach
                     self.handle_rate_limit(headers, url)
 
                     if general['status'] == 304:
-                        return self.cache_result('get', url, general['status'],
-                            headers, None)
+                        return self.cache_result('get', url, general['status'], headers, None)
 
                     if general['status'] == 503 and tries != 0:
                         # GitHub and BitBucket seem to rate limit via 503
@@ -205,6 +210,16 @@ class WgetDownloader(CliDownloader, DecodingDownloader, LimitingDownloader, Cach
 
         :return:
             If the object supports HTTPS requests
+        """
+
+        return True
+
+    def supports_plaintext(self):
+        """
+        Indicates if the object can handle non-secure HTTP requests
+
+        :return:
+            If the object supports non-secure HTTP requests
         """
 
         return True
@@ -326,12 +341,12 @@ class WgetDownloader(CliDownloader, DecodingDownloader, LimitingDownloader, Cach
         if re.match('Skipping \d+ byte', line):
             return True
 
-    def parse_headers(self, output=None):
+    def parse_headers(self, output):
         """
         Parses HTTP headers into two dict objects
 
         :param output:
-            An array of header lines, if None, loads from temp output file
+            An array of header lines
 
         :return:
             A tuple of (general, headers) where general is a dict with the keys:
@@ -341,11 +356,6 @@ class WgetDownloader(CliDownloader, DecodingDownloader, LimitingDownloader, Cach
             And headers is a dict with the keys being lower-case version of the
             HTTP header names.
         """
-
-        if not output:
-            with open_compat(self.tmp_file, 'r') as f:
-                output = read_compat(f).splitlines()
-            self.clean_tmp_file()
 
         general = {
             'version': '0.9',
@@ -365,6 +375,10 @@ class WgetDownloader(CliDownloader, DecodingDownloader, LimitingDownloader, Cach
                 general['message'] = match.group(3) or ''
             else:
                 name, value = line.split(':', 1)
-                headers[name.lower()] = value.strip()
+                name = name.lower()
+                if name in headers:
+                    headers[name] += ', %s' % value.strip()
+                else:
+                    headers[name] = value.strip()
 
         return (general, headers)
